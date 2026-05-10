@@ -45,6 +45,7 @@ type Message = {
 };
 
 export async function POST(request: Request) {
+  try {
   const { messages, universes } = (await request.json()) as {
     messages: Message[];
     universes: string[];
@@ -82,4 +83,9 @@ export async function POST(request: Request) {
   return new Response(readable, {
     headers: { "Content-Type": "text/plain; charset=utf-8" },
   });
+  } catch (error) {
+    // 오류 발생 시 HTML 대신 명확한 텍스트 오류 반환
+    const message = error instanceof Error ? error.message : "알 수 없는 오류";
+    return new Response(`오류: ${message}`, { status: 500 });
+  }
 }

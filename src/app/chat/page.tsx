@@ -59,6 +59,8 @@ export default function ChatPage() {
         body: JSON.stringify({ messages: updatedMessages, universes: selectedUniverses }),
       });
 
+      // 서버 오류(500 등)가 오면 HTML 대신 오류 메시지를 표시
+      if (!response.ok) throw new Error(`서버 오류: ${response.status}`);
       if (!response.body) throw new Error("응답 스트림이 없습니다.");
 
       setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
