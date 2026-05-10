@@ -1,20 +1,11 @@
-import fs from "fs";
-import path from "path";
+import { SEVEN_KNIGHTS_DATA } from "@/data/sevenKnights";
 
-// 세계관별 로컬 데이터 파일 경로 (파일에서 직접 읽어오는 방식)
-const DATA_FILES: Partial<Record<string, string>> = {
-  세븐나이츠: path.join(process.cwd(), "src/data/seven-knights.txt"),
+// 세계관별 데이터 매핑 (fs 대신 직접 import해서 Vercel에서도 안정적으로 동작)
+const UNIVERSE_DATA: Partial<Record<string, string>> = {
+  세븐나이츠: SEVEN_KNIGHTS_DATA,
 };
 
-// 세계관 정보를 파일에서 읽어서 반환
+// 세계관 이름으로 데이터 반환
 export async function fetchUniverseData(universeName: string): Promise<string> {
-  const filePath = DATA_FILES[universeName];
-  if (!filePath) return "";
-
-  try {
-    // fs.readFileSync = 파일을 읽어서 텍스트로 반환하는 Node.js 기본 기능
-    return fs.readFileSync(filePath, "utf-8");
-  } catch {
-    return ""; // 파일이 없으면 빈 문자열 반환
-  }
+  return UNIVERSE_DATA[universeName] ?? "";
 }
