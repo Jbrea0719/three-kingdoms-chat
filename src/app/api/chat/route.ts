@@ -13,7 +13,7 @@ type Message = {
 
 // POST /api/chat 핸들러
 export async function POST(request: Request) {
-  const { messages } = (await request.json()) as { messages: Message[] };
+const { messages } = (await request.json()) as { messages: Message[] };
 
   const client = new Anthropic({
     apiKey: process.env.ANTHROPIC_API_KEY,
