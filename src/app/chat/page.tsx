@@ -14,7 +14,7 @@ type Message = {
 // 지원하는 세계관 정의
 const UNIVERSES = [
   { id: "삼국지", label: "⚔️ 삼국지" },
-  { id: "서유기", label: "🐒 서유기" },
+  { id: "세븐나이츠", label: "🗡️ 세븐나이츠" },
   { id: "반지의제왕", label: "🧙 반지의 제왕" },
 ];
 
