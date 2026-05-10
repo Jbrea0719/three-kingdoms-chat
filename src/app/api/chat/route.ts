@@ -1,12 +1,24 @@
-// 최소한의 테스트 라우트 - 아무것도 import 안 하고 단순 응답만 반환
+import Anthropic from "@anthropic-ai/sdk";
+
 export async function POST(request: Request) {
   try {
     const { messages } = await request.json();
     const lastMessage = messages?.[messages.length - 1]?.content ?? "";
-    return new Response(`테스트 응답: "${lastMessage}" 를 받았습니다.`, {
+
+    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+
+    const response = await client.messages.create({
+      model: "claude-sonnet-4-5",
+      max_tokens: 256,
+      messages: [{ role: "user", content: lastMessage }],
+    });
+
+    const text = response.content[0].type === "text" ? response.content[0].text : "";
+    return new Response(text, {
       headers: { "Content-Type": "text/plain; charset=utf-8" },
     });
   } catch (error) {
+    console.error("[api/chat] 오류:", error);
     return new Response(`오류: ${String(error)}`, { status: 500 });
   }
 }
