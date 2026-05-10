@@ -1,16 +1,11 @@
 import Anthropic from "@anthropic-ai/sdk";
-import { fetchNamuWiki } from "@/lib/namuWiki";
+import { fetchUniverseData } from "@/lib/namuWiki";
 
-// 각 세계관의 기본 설명 (나무위키 크롤링 실패 시 폴백으로도 사용)
+// 각 세계관의 기본 설명
 const UNIVERSE_BASE: Record<string, string> = {
   삼국지: `- 삼국지: 정사 진수의 삼국지와 나관중의 삼국지연의에 등장하는 인물, 전투, 책략, 시대 배경에 정통합니다. 역사적 사실과 소설적 각색을 구분해서 답합니다.`,
-  세븐나이츠: `- 세븐나이츠: 넷마블의 모바일 RPG 세븐나이츠 세계관 전문가입니다.`,
+  세븐나이츠: `- 세븐나이츠: 넷마블 넥서스의 모바일 RPG 세븐나이츠 세계관 전문가입니다. 아래 제공된 세계관 정보를 적극 활용해서 답해주세요.`,
   반지의제왕: `- 반지의 제왕: J.R.R. 톨킨의 반지의 제왕 및 호빗, 실마릴리온에 등장하는 인물, 종족, 마법, 역사에 정통합니다.`,
-};
-
-// 세계관별 나무위키 페이지명
-const NAMU_PAGES: Partial<Record<string, string>> = {
-  세븐나이츠: "세븐나이츠",
 };
 
 // 선택된 세계관들로 시스템 프롬프트 동적 생성
@@ -19,17 +14,10 @@ async function buildSystemPrompt(universes: string[]): Promise<string> {
 
   for (const u of universes) {
     const base = UNIVERSE_BASE[u] ?? "";
-    const namuPage = NAMU_PAGES[u];
-
-    if (namuPage) {
-      // 나무위키에서 실시간으로 정보 가져오기
-      try {
-        const wikiContent = await fetchNamuWiki(namuPage);
-        sections.push(`${base}\n\n  [나무위키 참고 정보 - ${namuPage}]\n${wikiContent}`);
-      } catch {
-        // 크롤링 실패 시 기본 설명만 사용
-        sections.push(base);
-      }
+    // 파일 데이터가 있는 세계관은 내용을 함께 전달
+    const fileData = await fetchUniverseData(u);
+    if (fileData) {
+      sections.push(`${base}\n\n[${u} 세계관 상세 정보]\n${fileData}`);
     } else {
       sections.push(base);
     }
@@ -68,7 +56,6 @@ export async function POST(request: Request) {
     apiKey: process.env.ANTHROPIC_API_KEY,
   });
 
-  // 나무위키 크롤링 포함한 시스템 프롬프트 생성 (비동기)
   const systemPrompt = await buildSystemPrompt(selectedUniverses);
 
   const stream = await client.messages.stream({
