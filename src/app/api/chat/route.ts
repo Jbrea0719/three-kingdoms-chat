@@ -84,8 +84,9 @@ export async function POST(request: Request) {
     headers: { "Content-Type": "text/plain; charset=utf-8" },
   });
   } catch (error) {
-    // 오류 발생 시 HTML 대신 명확한 텍스트 오류 반환
-    const message = error instanceof Error ? error.message : "알 수 없는 오류";
+    // 오류 내용을 Vercel 런타임 로그에 기록
+    console.error("[/api/chat] 오류 발생:", error);
+    const message = error instanceof Error ? error.message : String(error);
     return new Response(`오류: ${message}`, { status: 500 });
   }
 }
