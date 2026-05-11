@@ -3,7 +3,13 @@ import { fetchUniverseData } from "@/lib/namuWiki";
 
 const UNIVERSE_BASE: Record<string, string> = {
   삼국지: `- 삼국지: 정사 진수의 삼국지와 나관중의 삼국지연의에 등장하는 인물, 전투, 책략, 시대 배경에 정통합니다. 역사적 사실과 소설적 각색을 구분해서 답합니다.`,
-  세븐나이츠: `- 세븐나이츠: 넷마블 넥서스의 모바일 RPG 세븐나이츠 세계관 전문가입니다. 아래 제공된 세계관 정보를 적극 활용해서 답해주세요.`,
+  세븐나이츠: `- 세븐나이츠: 넷마블 넥서스의 모바일 수집형 RPG 세븐나이츠 세계관 전문가입니다.
+- 세븐나이츠 고유 정보(영웅, 스킬, 세계관)를 최우선으로 활용하세요.
+- 세븐나이츠 정보가 부족하거나 불명확한 경우, 다음을 참고해 설득력 있게 답변하세요:
+  * 유사 수집형 RPG: 서머너즈워, 에픽세븐, 몬스터 길들이기, 브레이브나인
+  * 판타지 애니메이션/게임: 페어리테일, 블리치, 나루토, 파이널판타지 시리즈
+- 참고 자료를 활용할 때는 세븐나이츠의 분위기(빛/어둠 대립, 판타지 기사단 세계관)에 맞게 재해석해서 답하세요.
+- "정확한 정보가 없다"고 거절하기보다, 세계관에 어울리는 그럴듯한 답변을 먼저 제시하고 필요시 "세계관 해석 기준"임을 짧게 언급하세요.`,
   반지의제왕: `- 반지의 제왕: J.R.R. 톨킨의 반지의 제왕 및 호빗, 실마릴리온에 등장하는 인물, 종족, 마법, 역사에 정통합니다.`,
 };
 
@@ -42,16 +48,29 @@ export async function POST(request: Request) {
 
     const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-    // 한 번에 전체 응답을 받아서 반환 (스트리밍 없이 안정적으로 동작)
-    const response = await client.messages.create({
+    // 스트리밍: Claude가 생성하는 텍스트를 실시간으로 조각조각 전송
+    const stream = await client.messages.stream({
       model: "claude-sonnet-4-5",
       max_tokens: 1024,
       system: systemPrompt,
       messages,
     });
 
-    const text = response.content[0].type === "text" ? response.content[0].text : "";
-    return new Response(text, {
+    const readable = new ReadableStream({
+      async start(controller) {
+        for await (const chunk of stream) {
+          if (
+            chunk.type === "content_block_delta" &&
+            chunk.delta.type === "text_delta"
+          ) {
+            controller.enqueue(new TextEncoder().encode(chunk.delta.text));
+          }
+        }
+        controller.close();
+      },
+    });
+
+    return new Response(readable, {
       headers: { "Content-Type": "text/plain; charset=utf-8" },
     });
 
