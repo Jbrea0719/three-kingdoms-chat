@@ -141,7 +141,7 @@
 /* 다크 테마 - 모든 텍스트 밝게 */
 .prose h1, .prose h2, .prose h3, .prose h4 { color: #e8e0d0 !important; }
 .prose p, .prose li, .prose td, .prose th { color: #e8e0d0 !important; }
-.prose strong { color: #ffe566 !important; font-weight: 700 !important; text-shadow: 0 0 8px rgba(255,229,102,0.5); }
+.prose strong { color: #d4af37 !important; font-weight: 700 !important; }
 .prose em { color: #d4c9b0 !important; }
 .prose code { color: #d4af37 !important; background: rgba(212,175,55,0.1) !important; }
 .prose blockquote { color: #c8bfa8 !important; border-left-color: rgba(212,175,55,0.4) !important; }
