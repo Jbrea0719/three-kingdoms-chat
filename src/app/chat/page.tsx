@@ -33,6 +33,13 @@ function getTime() {
 
 const GOLD = "#d4af37";
 const GOLD_DIM = "rgba(212,175,55,0.5)";
+
+// **"텍스트"** 패턴에서 따옴표를 제거해 마크다운 bold가 깨지지 않도록 전처리
+function fixMarkdown(text: string): string {
+  return text
+    .replace(/\*\*"([^"]+)"\*\*/g, "**$1**")   // **"..."** → **...**
+    .replace(/\*\*'([^']+)'\*\*/g, "**$1**");   // **'...'** → **...**
+}
 const GOLD_FAINT = "rgba(212,175,55,0.15)";
 
 export default function ChatPage() {
@@ -287,14 +294,14 @@ export default function ChatPage() {
                 <div className="flex flex-col gap-1 max-w-[75%]">
                   <p className="text-xs ml-1" style={{ color: GOLD }}>소피</p>
                   <div className="px-4 py-3 rounded-2xl rounded-tl-sm text-sm prose prose-sm max-w-none" style={{ backgroundColor: "rgba(255,255,255,0.05)", border: `1px solid ${GOLD_FAINT}`, color: "#e8e0d0", backdropFilter: "blur(10px)" }}>
-                    <ReactMarkdown>{pair.assistant.content}</ReactMarkdown>
+                    <ReactMarkdown>{fixMarkdown(pair.assistant.content)}</ReactMarkdown>
                   </div>
                   <button onClick={() => loadDetail(pair.pair_id)} className="text-xs ml-1 flex items-center gap-1 w-fit" style={{ color: GOLD_DIM }}>
                     {pair.detail_loading ? "⏳ 불러오는 중..." : pair.detail_shown ? "▲ 접기" : "▼ 자세한 답변 보기"}
                   </button>
                   {pair.detail_shown && pair.detail_content && (
                     <div className="px-4 py-3 rounded-2xl text-sm prose prose-sm max-w-none" style={{ backgroundColor: "rgba(212,175,55,0.07)", border: `1px solid rgba(212,175,55,0.25)`, color: "#e8e0d0" }}>
-                      <ReactMarkdown>{pair.detail_content}</ReactMarkdown>
+                      <ReactMarkdown>{fixMarkdown(pair.detail_content)}</ReactMarkdown>
                     </div>
                   )}
                 </div>
@@ -316,7 +323,7 @@ export default function ChatPage() {
                   <p className="text-xs ml-1" style={{ color: GOLD }}>소피</p>
                   <div className="px-4 py-3 rounded-2xl rounded-tl-sm text-sm prose prose-sm max-w-none" style={{ backgroundColor: "rgba(255,255,255,0.05)", border: `1px solid ${GOLD_FAINT}`, color: "#e8e0d0" }}>
                     {streamingPair.assistant
-                      ? <ReactMarkdown>{streamingPair.assistant}</ReactMarkdown>
+                      ? <ReactMarkdown>{fixMarkdown(streamingPair.assistant)}</ReactMarkdown>
                       : <span style={{ color: GOLD_DIM }} className="animate-pulse">···</span>}
                   </div>
                 </div>
