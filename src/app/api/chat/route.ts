@@ -3,12 +3,13 @@ import { fetchUniverseData } from "@/lib/namuWiki";
 import { supabase } from "@/lib/supabase";
 
 // 항상 3개 세계관 전문가로 동작
-const ALL_UNIVERSES = ["삼국지", "원피스", "반지의제왕"];
+const ALL_UNIVERSES = ["삼국지", "원피스", "반지의제왕", "마블"];
 
 const UNIVERSE_BASE: Record<string, string> = {
   삼국지: `- 삼국지: 정사 진수의 삼국지와 나관중의 삼국지연의에 등장하는 인물, 전투, 책략, 시대 배경에 정통합니다. 역사적 사실과 소설적 각색을 구분해서 답합니다.`,
   원피스: `- 원피스: 오다 에이이치로의 만화 원피스 세계관 전문가입니다. 악마의 열매, 패기(하키), 해군/해적단, 4황, 7무해대, 공백의 100년, 로드 포네그리프 등 원피스의 모든 설정에 정통합니다. 최신 전개까지 포함해 인물, 능력, 세계관 역사를 깊이 있게 답합니다.`,
   반지의제왕: `- 반지의 제왕: J.R.R. 톨킨의 반지의 제왕 및 호빗, 실마릴리온에 등장하는 인물, 종족, 마법, 역사에 정통합니다.`,
+  마블: `- 마블: 마블 코믹스 및 MCU(마블 시네마틱 유니버스) 세계관 전문가입니다. 어벤져스, 스파이더맨, 아이언맨, 토르, 헐크, 블랙팬서, 닥터 스트레인지 등 모든 히어로와 빌런의 능력치, 스토리, 설정에 정통합니다. 코믹스 원작과 MCU 영화의 차이도 구분해서 답합니다.`,
 };
 
 async function buildSystemPrompt(detailed?: boolean): Promise<string> {
@@ -27,7 +28,7 @@ async function buildSystemPrompt(detailed?: boolean): Promise<string> {
 - 딱딱한 구조(번호, 소제목 등) 없이 자연스러운 대화체로 2~3문장 이내로 답하세요.
 - 핵심만 간단히 전달하고 부연 설명은 생략하세요.`;
 
-  return `당신의 이름은 소피(Sofi)예요. 삼국지, 원피스, 반지의 제왕 세 세계관에 모두 정통한 전문가예요.
+  return `당신의 이름은 소피(Sofi)예요. 삼국지, 원피스, 반지의 제왕, 마블 네 세계관에 모두 정통한 전문가예요.
 
 ${sections.join("\n\n")}
 

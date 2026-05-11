@@ -262,7 +262,7 @@ export default function ChatPage() {
         </div>
         <div>
           <p className="font-bold text-sm" style={{ color: GOLD }}>소피</p>
-          <p className="text-xs" style={{ color: GOLD_DIM }}>세계관 전문가 · 삼국지 · 원피스 · 반지의 제왕</p>
+          <p className="text-xs" style={{ color: GOLD_DIM }}>세계관 전문가 · 삼국지 · 원피스 · 반지의 제왕 · 마블</p>
         </div>
         {sessionId && (
           <div className="ml-auto">
@@ -281,7 +281,7 @@ export default function ChatPage() {
             <div className="text-center mt-20">
               <div className="w-16 h-16 rounded-full mx-auto flex items-center justify-center text-3xl mb-4" style={{ backgroundColor: GOLD_FAINT, border: `1px solid ${GOLD_DIM}` }}><img src="/avatar.png" alt="전문가" className="w-full h-full object-cover rounded-full" /></div>
               <p className="text-sm font-medium" style={{ color: GOLD }}>소피</p>
-              <p className="text-xs mt-1" style={{ color: GOLD_DIM }}>삼국지, 원피스, 반지의 제왕 — 무엇이든 물어보세요</p>
+              <p className="text-xs mt-1" style={{ color: GOLD_DIM }}>삼국지 · 원피스 · 반지의 제왕 · 마블 — 무엇이든 물어보세요</p>
             </div>
           )}
 
