@@ -262,7 +262,7 @@ export default function ChatPage() {
         </div>
         <div>
           <p className="font-bold text-sm" style={{ color: GOLD }}>소피</p>
-          <p className="text-xs" style={{ color: GOLD_DIM }}>세계관 전문가 · 삼국지 · 원피스 · 반지의 제왕 · 마블</p>
+          <p className="text-xs" style={{ color: GOLD_DIM }}>세계관 덕후 : 삼국지 + 원피스 + 반지의 제왕 + 마블</p>
         </div>
         {sessionId && (
           <div className="ml-auto">
