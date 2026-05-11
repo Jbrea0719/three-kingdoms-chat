@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useRef, useEffect, KeyboardEvent } from "react";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import ReactMarkdown from "react-markdown";
 
 type Message = {
@@ -51,7 +50,9 @@ export default function ChatPage() {
   const [nicknameInput, setNicknameInput] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [showDeleted, setShowDeleted] = useState(false);
+  const [showScrollBtn, setShowScrollBtn] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const saved = localStorage.getItem("chat_nickname");
@@ -70,8 +71,19 @@ export default function ChatPage() {
   }, [sessionId]);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    scrollToBottom();
   }, [pairs, streamingPair]);
+
+  function scrollToBottom() {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }
+
+  function handleScroll() {
+    const el = scrollRef.current;
+    if (!el) return;
+    const distFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+    setShowScrollBtn(distFromBottom > 200);
+  }
 
   function groupIntoPairs(messages: Message[]): MessagePair[] {
     const pairMap = new Map<string, { user?: Message; assistant?: Message; is_deleted: boolean }>();
@@ -262,7 +274,7 @@ export default function ChatPage() {
       </header>
 
       {/* 대화 영역 */}
-      <ScrollArea className="flex-1 px-4 py-6">
+      <div ref={scrollRef} onScroll={handleScroll} className="flex-1 overflow-y-auto px-4 py-6" style={{ scrollbarWidth: "thin", scrollbarColor: `${GOLD_DIM} transparent` }}>
         <div className="max-w-2xl mx-auto space-y-6">
 
           {activePairs.length === 0 && !streamingPair && (
@@ -365,7 +377,18 @@ export default function ChatPage() {
 
           <div ref={bottomRef} />
         </div>
-      </ScrollArea>
+      </div>
+
+      {/* 맨 아래로 버튼 */}
+      {showScrollBtn && (
+        <button
+          onClick={scrollToBottom}
+          className="fixed bottom-24 right-6 w-10 h-10 rounded-full flex items-center justify-center text-base shadow-lg z-40 transition-opacity"
+          style={{ backgroundColor: GOLD, color: "#0d0d1a", boxShadow: `0 4px 15px rgba(212,175,55,0.4)` }}
+        >
+          ↓
+        </button>
+      )}
 
       {/* 입력창 */}
       <div className="px-4 py-3 flex gap-3" style={{ backgroundColor: "rgba(0,0,0,0.5)", borderTop: `1px solid ${GOLD_FAINT}` }}>
