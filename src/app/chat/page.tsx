@@ -11,7 +11,6 @@ type Message = {
   content: string;
 };
 
-// 지원하는 세계관 정의
 const UNIVERSES = [
   { id: "삼국지", label: "⚔️ 삼국지" },
   { id: "세븐나이츠", label: "🗡️ 세븐나이츠" },
@@ -22,22 +21,54 @@ export default function ChatPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  // 선택된 세계관 목록 (기본: 삼국지만 선택)
   const [selectedUniverses, setSelectedUniverses] = useState<string[]>(["삼국지"]);
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [nicknameInput, setNicknameInput] = useState("");
+  const [showModal, setShowModal] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+
+  // 앱 시작 시 저장된 닉네임 확인
+  useEffect(() => {
+    const saved = localStorage.getItem("chat_nickname");
+    if (saved) {
+      setSessionId(saved);
+    } else {
+      setShowModal(true);
+    }
+  }, []);
+
+  // 닉네임 확정 후 대화 기록 불러오기
+  useEffect(() => {
+    if (!sessionId) return;
+    fetch(`/api/messages?session_id=${encodeURIComponent(sessionId)}`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.messages?.length > 0) {
+          setMessages(data.messages.map((m: { role: "user" | "assistant"; content: string }) => ({
+            role: m.role,
+            content: m.content,
+          })));
+        }
+      })
+      .catch(() => {});
+  }, [sessionId]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // 세계관 토글 (선택/해제)
+  function confirmNickname() {
+    const trimmed = nicknameInput.trim();
+    if (!trimmed) return;
+    localStorage.setItem("chat_nickname", trimmed);
+    setSessionId(trimmed);
+    setShowModal(false);
+  }
+
   function toggleUniverse(id: string) {
     setSelectedUniverses((prev) =>
-      prev.includes(id)
-        ? prev.filter((u) => u !== id) // 이미 선택됐으면 제거
-        : [...prev, id]                 // 없으면 추가
+      prev.includes(id) ? prev.filter((u) => u !== id) : [...prev, id]
     );
-    // 세계관이 바뀌면 대화 초기화
     setMessages([]);
   }
 
@@ -55,11 +86,13 @@ export default function ChatPage() {
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        // 선택된 세계관도 함께 전송
-        body: JSON.stringify({ messages: updatedMessages, universes: selectedUniverses }),
+        body: JSON.stringify({
+          messages: updatedMessages,
+          universes: selectedUniverses,
+          session_id: sessionId,
+        }),
       });
 
-      // 서버 오류(500 등)가 오면 HTML 대신 오류 메시지를 표시
       if (!response.ok) throw new Error(`서버 오류: ${response.status}`);
       if (!response.body) throw new Error("응답 스트림이 없습니다.");
 
@@ -99,17 +132,50 @@ export default function ChatPage() {
     }
   }
 
-  // 현재 선택된 세계관이 크로스오버인지 여부
   const isCrossover = selectedUniverses.length > 1;
 
   return (
     <div className="flex flex-col h-screen bg-gray-50">
+      {/* 닉네임 입력 모달 */}
+      {showModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-8 w-80 shadow-2xl">
+            <h2 className="text-lg font-bold text-gray-800 mb-2">닉네임을 입력하세요</h2>
+            <p className="text-sm text-gray-500 mb-4">대화 기록이 닉네임에 저장됩니다</p>
+            <Input
+              value={nicknameInput}
+              onChange={(e) => setNicknameInput(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && confirmNickname()}
+              placeholder="예: 정민, 조조, 제갈량"
+              className="mb-4"
+              autoFocus
+            />
+            <Button
+              onClick={confirmNickname}
+              disabled={!nicknameInput.trim()}
+              className="w-full bg-red-800 hover:bg-red-700 text-white"
+            >
+              시작하기
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* 상단 헤더 */}
       <header className="bg-red-800 text-white px-6 py-4 shadow-md">
-        <h1 className="text-xl font-bold">📚 세계관 전문가 챗봇</h1>
-        <p className="text-red-200 text-sm">세계관을 선택하고 무엇이든 물어보세요</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-bold">📚 세계관 전문가 챗봇</h1>
+            <p className="text-red-200 text-sm">세계관을 선택하고 무엇이든 물어보세요</p>
+          </div>
+          {sessionId && (
+            <div className="text-right">
+              <p className="text-red-200 text-xs">접속 중</p>
+              <p className="text-white text-sm font-medium">{sessionId}</p>
+            </div>
+          )}
+        </div>
 
-        {/* 세계관 선택 버튼 */}
         <div className="flex gap-2 mt-3 flex-wrap">
           {UNIVERSES.map((u) => {
             const isSelected = selectedUniverses.includes(u.id);
@@ -119,15 +185,14 @@ export default function ChatPage() {
                 onClick={() => toggleUniverse(u.id)}
                 className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
                   isSelected
-                    ? "bg-white text-red-800"           // 선택됨: 흰 배경
-                    : "bg-red-700 text-red-200 hover:bg-red-600" // 미선택: 어두운 배경
+                    ? "bg-white text-red-800"
+                    : "bg-red-700 text-red-200 hover:bg-red-600"
                 }`}
               >
                 {u.label}
               </button>
             );
           })}
-          {/* 크로스오버 모드 안내 */}
           {isCrossover && (
             <span className="px-3 py-1 rounded-full text-sm bg-yellow-400 text-yellow-900 font-medium">
               ✨ 크로스오버 모드

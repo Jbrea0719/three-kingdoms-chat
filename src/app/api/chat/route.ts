@@ -1,5 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { fetchUniverseData } from "@/lib/namuWiki";
+import { supabase } from "@/lib/supabase";
 
 const UNIVERSE_BASE: Record<string, string> = {
   삼국지: `- 삼국지: 정사 진수의 삼국지와 나관중의 삼국지연의에 등장하는 인물, 전투, 책략, 시대 배경에 정통합니다. 역사적 사실과 소설적 각색을 구분해서 답합니다.`,
@@ -38,9 +39,10 @@ type Message = { role: "user" | "assistant"; content: string };
 
 export async function POST(request: Request) {
   try {
-    const { messages, universes } = (await request.json()) as {
+    const { messages, universes, session_id } = (await request.json()) as {
       messages: Message[];
       universes: string[];
+      session_id?: string;
     };
 
     const selectedUniverses = universes?.length > 0 ? universes : ["삼국지"];
@@ -56,6 +58,9 @@ export async function POST(request: Request) {
       messages,
     });
 
+    const userMessage = messages[messages.length - 1];
+    let assistantText = "";
+
     const readable = new ReadableStream({
       async start(controller) {
         for await (const chunk of stream) {
@@ -63,10 +68,19 @@ export async function POST(request: Request) {
             chunk.type === "content_block_delta" &&
             chunk.delta.type === "text_delta"
           ) {
+            assistantText += chunk.delta.text;
             controller.enqueue(new TextEncoder().encode(chunk.delta.text));
           }
         }
         controller.close();
+
+        // 스트리밍 완료 후 Supabase에 저장
+        if (session_id) {
+          await supabase.from("messages").insert([
+            { session_id, role: "user", content: userMessage.content, universes: selectedUniverses.join(",") },
+            { session_id, role: "assistant", content: assistantText, universes: selectedUniverses.join(",") },
+          ]);
+        }
       },
     });
 
