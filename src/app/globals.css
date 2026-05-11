@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
+@plugin "@tailwindcss/typography";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -128,3 +129,20 @@
     @apply font-sans;
   }
 }
+
+/* 채팅 답변 마크다운 줄간격 조정 */
+.prose p { margin-top: 0.3rem; margin-bottom: 0.3rem; }
+.prose h1, .prose h2, .prose h3 { margin-top: 0.6rem; margin-bottom: 0; }
+.prose h1 + *, .prose h2 + *, .prose h3 + * { margin-top: 0 !important; }
+.prose ul, .prose ol { margin-top: 0.3rem; margin-bottom: 0.3rem; }
+.prose li { margin-top: 0.1rem; margin-bottom: 0.1rem; }
+.prose blockquote { margin-top: 0.3rem; margin-bottom: 0.3rem; }
+
+/* 다크 테마 - 모든 텍스트 밝게 */
+.prose h1, .prose h2, .prose h3, .prose h4 { color: #e8e0d0 !important; }
+.prose p, .prose li, .prose td, .prose th { color: #e8e0d0 !important; }
+.prose strong { color: #f5ead0 !important; }
+.prose em { color: #d4c9b0 !important; }
+.prose code { color: #d4af37 !important; background: rgba(212,175,55,0.1) !important; }
+.prose blockquote { color: #c8bfa8 !important; border-left-color: rgba(212,175,55,0.4) !important; }
+.prose a { color: #d4af37 !important; }
