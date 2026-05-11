@@ -242,8 +242,8 @@ export default function ChatPage() {
           <img src="/avatar.png" alt="전문가" className="w-full h-full object-cover rounded-full" />
         </div>
         <div>
-          <p className="font-bold text-sm" style={{ color: GOLD }}>세계관 전문가</p>
-          <p className="text-xs" style={{ color: GOLD_DIM }}>삼국지 · 세븐나이츠 · 반지의 제왕</p>
+          <p className="font-bold text-sm" style={{ color: GOLD }}>소피</p>
+          <p className="text-xs" style={{ color: GOLD_DIM }}>세계관 전문가 · 삼국지 · 세븐나이츠 · 반지의 제왕</p>
         </div>
         {sessionId && (
           <div className="ml-auto">
@@ -261,7 +261,7 @@ export default function ChatPage() {
           {activePairs.length === 0 && !streamingPair && (
             <div className="text-center mt-20">
               <div className="w-16 h-16 rounded-full mx-auto flex items-center justify-center text-3xl mb-4" style={{ backgroundColor: GOLD_FAINT, border: `1px solid ${GOLD_DIM}` }}><img src="/avatar.png" alt="전문가" className="w-full h-full object-cover rounded-full" /></div>
-              <p className="text-sm font-medium" style={{ color: GOLD }}>세계관 전문가</p>
+              <p className="text-sm font-medium" style={{ color: GOLD }}>소피</p>
               <p className="text-xs mt-1" style={{ color: GOLD_DIM }}>삼국지, 세븐나이츠, 반지의 제왕 — 무엇이든 물어보세요</p>
             </div>
           )}
@@ -285,7 +285,7 @@ export default function ChatPage() {
               <div className="flex items-start gap-3">
                 <div className="w-8 h-8 rounded-full flex items-center justify-center text-base flex-shrink-0" style={{ backgroundColor: GOLD_FAINT, border: `1px solid ${GOLD_DIM}` }}><img src="/avatar.png" alt="전문가" className="w-full h-full object-cover rounded-full" /></div>
                 <div className="flex flex-col gap-1 max-w-[75%]">
-                  <p className="text-xs ml-1" style={{ color: GOLD }}>세계관 전문가</p>
+                  <p className="text-xs ml-1" style={{ color: GOLD }}>소피</p>
                   <div className="px-4 py-3 rounded-2xl rounded-tl-sm text-sm prose prose-sm max-w-none" style={{ backgroundColor: "rgba(255,255,255,0.05)", border: `1px solid ${GOLD_FAINT}`, color: "#e8e0d0", backdropFilter: "blur(10px)" }}>
                     <ReactMarkdown>{pair.assistant.content}</ReactMarkdown>
                   </div>
@@ -313,7 +313,7 @@ export default function ChatPage() {
               <div className="flex items-start gap-3">
                 <div className="w-8 h-8 rounded-full flex items-center justify-center text-base flex-shrink-0" style={{ backgroundColor: GOLD_FAINT, border: `1px solid ${GOLD_DIM}` }}><img src="/avatar.png" alt="전문가" className="w-full h-full object-cover rounded-full" /></div>
                 <div className="flex flex-col gap-1 max-w-[75%]">
-                  <p className="text-xs ml-1" style={{ color: GOLD }}>세계관 전문가</p>
+                  <p className="text-xs ml-1" style={{ color: GOLD }}>소피</p>
                   <div className="px-4 py-3 rounded-2xl rounded-tl-sm text-sm prose prose-sm max-w-none" style={{ backgroundColor: "rgba(255,255,255,0.05)", border: `1px solid ${GOLD_FAINT}`, color: "#e8e0d0" }}>
                     {streamingPair.assistant
                       ? <ReactMarkdown>{streamingPair.assistant}</ReactMarkdown>
