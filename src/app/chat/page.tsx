@@ -89,6 +89,15 @@ function fixMarkdown(text: string): string {
     .replace(/\*\*"([^"]+)"\*\*/g, "**$1**")   // **"..."** → **...**
     .replace(/\*\*'([^']+)'\*\*/g, "**$1**");   // **'...'** → **...**
 }
+
+// 토큰 한도 초과로 잘린 경우 불완전한 마지막 줄 제거
+function cleanTruncated(text: string): string {
+  let clean = text.replace("__TRUNCATED__", "").trimEnd();
+  if (/([요다죠네해)]|[!?.。！？])\s*$/.test(clean)) return clean;
+  const lastNL = clean.lastIndexOf("\n");
+  if (lastNL > 0) return clean.slice(0, lastNL).trimEnd();
+  return clean;
+}
 const GOLD_FAINT = "rgba(212,175,55,0.15)";
 
 export default function ChatPage() {
@@ -131,7 +140,8 @@ export default function ChatPage() {
   }, [streamingPair]);
 
   function scrollToBottom() {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    const el = scrollRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
   }
 
   function handleScroll() {
@@ -211,14 +221,17 @@ export default function ChatPage() {
         const { done, value } = await reader.read();
         if (done) break;
         assistantText += decoder.decode(value);
-        setStreamingPair({ user: trimmed, assistant: assistantText });
+        setStreamingPair({ user: trimmed, assistant: assistantText.replace("__TRUNCATED__", "") });
       }
+      const finalText = assistantText.includes("__TRUNCATED__")
+        ? cleanTruncated(assistantText)
+        : assistantText;
       const hadScrolledUp = userScrolledUpRef.current;
       userScrolledUpRef.current = false;
       setPairs((prev) => [...prev, {
         pair_id: pairId,
         user: { role: "user", content: trimmed, pair_id: pairId },
-        assistant: { role: "assistant", content: assistantText, pair_id: pairId },
+        assistant: { role: "assistant", content: finalText, pair_id: pairId },
         is_deleted: false,
         timestamp: time,
       }]);
@@ -284,8 +297,10 @@ export default function ChatPage() {
         const { done, value } = await reader.read();
         if (done) break;
         text += decoder.decode(value);
-        setPairs((prev) => prev.map((p) => p.pair_id === pairId ? { ...p, detail_content: text } : p));
+        setPairs((prev) => prev.map((p) => p.pair_id === pairId ? { ...p, detail_content: text.replace("__TRUNCATED__", "") } : p));
       }
+      const finalDetailText = text.includes("__TRUNCATED__") ? cleanTruncated(text) : text;
+      setPairs((prev) => prev.map((p) => p.pair_id === pairId ? { ...p, detail_content: finalDetailText } : p));
     } catch {
       setPairs((prev) => prev.map((p) => p.pair_id === pairId ? { ...p, detail_content: "오류가 발생했습니다." } : p));
     } finally {
