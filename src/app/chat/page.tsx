@@ -111,6 +111,7 @@ export default function ChatPage() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const userScrolledUpRef = useRef(false);
+  const isSubLoadingRef = useRef(false); // loadDetail 등 서브 스트리밍 중 여부
 
   useEffect(() => {
     const saved = localStorage.getItem("chat_nickname");
@@ -145,12 +146,11 @@ export default function ChatPage() {
     if (!el) return;
     const distFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
     setShowScrollBtn(distFromBottom > 200);
-    // 스트리밍 중 사용자 스크롤 감지
-    if (isLoading) {
+    // 기본 답변 or 자세한 답변 스트리밍 중 사용자 스크롤 감지
+    if (isLoading || isSubLoadingRef.current) {
       if (distFromBottom > 200) {
         userScrolledUpRef.current = true;
       } else if (distFromBottom < 50) {
-        // 사용자가 다시 하단으로 내리면 자동 스크롤 재개
         userScrolledUpRef.current = false;
       }
     }
@@ -272,6 +272,8 @@ export default function ChatPage() {
       setPairs((prev) => prev.map((p) => p.pair_id === pairId ? { ...p, detail_shown: !p.detail_shown } : p));
       return;
     }
+    isSubLoadingRef.current = true;
+    userScrolledUpRef.current = false;
     setPairs((prev) => prev.map((p) => p.pair_id === pairId ? { ...p, detail_loading: true, detail_shown: true } : p));
     try {
       // 현재 Q&A만 전달 — 이전 기록 제외로 입력 토큰 절약 (출력 공간 확보)
@@ -294,13 +296,21 @@ export default function ChatPage() {
         if (done) break;
         text += decoder.decode(value);
         setPairs((prev) => prev.map((p) => p.pair_id === pairId ? { ...p, detail_content: text.replace("__TRUNCATED__", "") } : p));
-        scrollToBottom();
+        if (!userScrolledUpRef.current) scrollToBottom();
       }
+      const hadScrolledUp = userScrolledUpRef.current;
       const finalDetailText = text.includes("__TRUNCATED__") ? cleanTruncated(text) : text;
       setPairs((prev) => prev.map((p) => p.pair_id === pairId ? { ...p, detail_content: finalDetailText } : p));
+      if (hadScrolledUp) {
+        setShowAnswerCompleteBtn(true);
+      } else {
+        scrollToBottom();
+      }
     } catch {
       setPairs((prev) => prev.map((p) => p.pair_id === pairId ? { ...p, detail_content: "오류가 발생했습니다." } : p));
     } finally {
+      isSubLoadingRef.current = false;
+      userScrolledUpRef.current = false;
       setPairs((prev) => prev.map((p) => p.pair_id === pairId ? { ...p, detail_loading: false } : p));
     }
   }
