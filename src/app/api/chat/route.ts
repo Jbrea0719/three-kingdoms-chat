@@ -92,17 +92,23 @@ export async function POST(request: Request) {
           ) {
             assistantText += chunk.delta.text;
             controller.enqueue(new TextEncoder().encode(chunk.delta.text));
+          } else if (chunk.type === "message_delta") {
+            // max_tokens에 걸려 잘린 경우 클라이언트에 알림
+            const delta = chunk.delta as { stop_reason?: string };
+            if (delta.stop_reason === "max_tokens") {
+              controller.enqueue(new TextEncoder().encode("__TRUNCATED__"));
+            }
           }
         }
-        controller.close();
-
-        // 스트리밍 완료 후 Supabase에 pair_id와 함께 저장
+        // 스트리밍 완료 후 Supabase에 저장 — close() 전에 수행해야 함수 종료 전 완료 보장
         if (session_id && pair_id) {
           await supabase.from("messages").insert([
             { session_id, pair_id, role: "user", content: userMessage.content, universes: "전체", is_deleted: false },
             { session_id, pair_id, role: "assistant", content: assistantText, universes: "전체", is_deleted: false },
           ]);
         }
+
+        controller.close();
       },
     });
 
