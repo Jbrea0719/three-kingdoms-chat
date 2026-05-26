@@ -57,7 +57,7 @@ export default function ChatPage() {
 
   useEffect(() => {
     const saved = localStorage.getItem("chat_nickname");
-    if (saved) setSessionId(saved);
+    if (saved) setSessionId("chat:" + saved);
     else setShowModal(true);
   }, []);
 
@@ -108,7 +108,7 @@ export default function ChatPage() {
     const trimmed = nicknameInput.trim();
     if (!trimmed) return;
     localStorage.setItem("chat_nickname", trimmed);
-    setSessionId(trimmed);
+    setSessionId("chat:" + trimmed);
     setShowModal(false);
   }
 
@@ -295,7 +295,7 @@ export default function ChatPage() {
         {sessionId && (
           <div className="ml-auto">
             <span className="text-xs px-3 py-1 rounded-full" style={{ backgroundColor: GOLD_FAINT, border: `1px solid rgba(212,175,55,0.3)`, color: GOLD }}>
-              {sessionId}
+              {sessionId.replace(/^chat:/, "")}
             </span>
           </div>
         )}
