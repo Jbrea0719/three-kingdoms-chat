@@ -101,9 +101,11 @@ export default function ChatPage() {
   const [showModal, setShowModal] = useState(false);
   const [showDeleted, setShowDeleted] = useState(false);
   const [showScrollBtn, setShowScrollBtn] = useState(false);
+  const [showAnswerCompleteBtn, setShowAnswerCompleteBtn] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const userScrolledUpRef = useRef(false);
 
   useEffect(() => {
     const saved = localStorage.getItem("chat_nickname");
@@ -121,9 +123,12 @@ export default function ChatPage() {
       .catch(() => {});
   }, [sessionId]);
 
+  // 스트리밍 중 + 사용자가 스크롤 올리지 않았을 때만 자동 하단 이동
   useEffect(() => {
-    scrollToBottom();
-  }, [pairs, streamingPair]);
+    if (streamingPair !== null && !userScrolledUpRef.current) {
+      scrollToBottom();
+    }
+  }, [streamingPair]);
 
   function scrollToBottom() {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -134,6 +139,15 @@ export default function ChatPage() {
     if (!el) return;
     const distFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
     setShowScrollBtn(distFromBottom > 200);
+    // 스트리밍 중 사용자 스크롤 감지
+    if (isLoading) {
+      if (distFromBottom > 200) {
+        userScrolledUpRef.current = true;
+      } else if (distFromBottom < 50) {
+        // 사용자가 다시 하단으로 내리면 자동 스크롤 재개
+        userScrolledUpRef.current = false;
+      }
+    }
   }
 
   function groupIntoPairs(messages: Message[]): MessagePair[] {
@@ -177,6 +191,7 @@ export default function ChatPage() {
     setStreamingPair({ user: trimmed, assistant: "" });
     setInput("");
     setIsLoading(true);
+    userScrolledUpRef.current = false; // 새 질문 시작 시 초기화
 
     const controller = new AbortController();
     abortControllerRef.current = controller;
@@ -198,6 +213,8 @@ export default function ChatPage() {
         assistantText += decoder.decode(value);
         setStreamingPair({ user: trimmed, assistant: assistantText });
       }
+      const hadScrolledUp = userScrolledUpRef.current;
+      userScrolledUpRef.current = false;
       setPairs((prev) => [...prev, {
         pair_id: pairId,
         user: { role: "user", content: trimmed, pair_id: pairId },
@@ -206,6 +223,12 @@ export default function ChatPage() {
         timestamp: time,
       }]);
       setStreamingPair(null);
+      // 스크롤 올린 적 있으면 "답변 완료 ↓" 버튼, 없으면 자동 하단 이동
+      if (hadScrolledUp) {
+        setShowAnswerCompleteBtn(true);
+      } else {
+        scrollToBottom();
+      }
     } catch {
       // AbortError면 조용히 처리 (버튼에서 이미 처리함)
     } finally {
@@ -219,6 +242,8 @@ export default function ChatPage() {
     abortControllerRef.current?.abort();
     setStreamingPair(null);
     setInput("");
+    userScrolledUpRef.current = false;
+    setShowAnswerCompleteBtn(false);
   }
 
   // 질문 수정: 답변 중단 + 질문을 입력창에 복원
@@ -227,6 +252,8 @@ export default function ChatPage() {
     abortControllerRef.current?.abort();
     setStreamingPair(null);
     setInput(question);
+    userScrolledUpRef.current = false;
+    setShowAnswerCompleteBtn(false);
   }
 
   async function loadDetail(pairId: string) {
@@ -494,7 +521,18 @@ export default function ChatPage() {
       </div>
 
       {/* 맨 아래로 버튼 */}
-      {showScrollBtn && (
+      {/* 답변 완료 버튼 (스크롤 올린 상태에서 스트리밍 완료 시) */}
+      {showAnswerCompleteBtn && (
+        <button
+          onClick={() => { scrollToBottom(); setShowAnswerCompleteBtn(false); }}
+          className="fixed bottom-24 right-6 px-4 h-10 rounded-full flex items-center gap-2 text-xs font-bold shadow-lg z-40"
+          style={{ backgroundColor: GOLD, color: "#0d0d1a", boxShadow: `0 4px 15px rgba(212,175,55,0.5)` }}
+        >
+          답변 완료 ↓
+        </button>
+      )}
+      {/* 수동 스크롤 버튼 — 답변 완료 버튼 있을 때 숨김 (겹침 방지) */}
+      {showScrollBtn && !showAnswerCompleteBtn && (
         <button
           onClick={scrollToBottom}
           className="fixed bottom-24 right-6 w-10 h-10 rounded-full flex items-center justify-center text-base shadow-lg z-40 transition-opacity"
