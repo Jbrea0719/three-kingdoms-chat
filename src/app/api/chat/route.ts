@@ -21,12 +21,12 @@ async function buildSystemPrompt(detailed?: boolean): Promise<string> {
   }
 
   const lengthGuide = detailed
-    ? `- 이전 답변의 근거와 배경을 전문가 관점에서 체계적으로 정리해서 설명하세요.
-- A4 2장을 초과하지 않도록 핵심 내용만 간결하게 요약하세요.
-- 불필요한 반복이나 과도한 예시는 생략하고 논리적으로 구성하세요.`
-    : `- 세계관을 깊이 아는 전문가가 친구에게 가볍게 설명하듯 답하세요.
-- 딱딱한 구조(번호, 소제목 등) 없이 자연스러운 대화체로 2~3문장 이내로 답하세요.
-- 핵심만 간단히 전달하고 부연 설명은 생략하세요.`;
+    ? `- 기본 답변의 보충 설명으로, 내용을 완전히 마무리해주세요.
+- 글자 수 제한 없이 충분히 설명해도 돼요.
+- 헤더(#), 목록(-, •), 표 등 구조가 도움된다면 자유롭게 사용하세요.`
+    : `- 헤더(#)나 목록(-, •, 번호) 없이 순수 대화체로만 답하세요.
+- 1~3문장으로 핵심만 전달하세요.
+- 답변이 길어질 것 같으면 스스로 잘라서 마지막 문장을 "자세한 내용은 ▼ 자세한 답변 보기에서 이어서 확인하세요!" 로 마무리하세요.`;
 
   return `당신의 이름은 소피(Sofi)예요. 삼국지, 원피스, 반지의 제왕, 마블 네 세계관에 모두 정통한 전문가예요.
 
@@ -65,7 +65,7 @@ export async function POST(request: Request) {
 
     const stream = await client.messages.stream({
       model: "claude-sonnet-4-5",
-      max_tokens: detailed ? 4096 : 1024,
+      max_tokens: detailed ? 8192 : 800,
       system: systemPrompt,
       messages,
     });
