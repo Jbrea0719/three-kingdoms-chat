@@ -53,6 +53,7 @@ export default function ChatPage() {
   const [showScrollBtn, setShowScrollBtn] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     const saved = localStorage.getItem("chat_nickname");
@@ -126,11 +127,16 @@ export default function ChatPage() {
     setStreamingPair({ user: trimmed, assistant: "" });
     setInput("");
     setIsLoading(true);
+
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
     try {
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ messages: allMessages, session_id: sessionId, pair_id: pairId }),
+        signal: controller.signal,
       });
       if (!response.ok || !response.body) throw new Error("오류");
       const reader = response.body.getReader();
@@ -151,10 +157,26 @@ export default function ChatPage() {
       }]);
       setStreamingPair(null);
     } catch {
-      setStreamingPair(null);
+      // AbortError면 조용히 처리 (버튼에서 이미 처리함)
     } finally {
+      abortControllerRef.current = null;
       setIsLoading(false);
     }
+  }
+
+  // 질문 실수: 답변 중단 + 질문·답변 모두 삭제
+  function cancelAndDiscard() {
+    abortControllerRef.current?.abort();
+    setStreamingPair(null);
+    setInput("");
+  }
+
+  // 질문 수정: 답변 중단 + 질문을 입력창에 복원
+  function cancelAndEdit() {
+    const question = streamingPair?.user ?? "";
+    abortControllerRef.current?.abort();
+    setStreamingPair(null);
+    setInput(question);
   }
 
   async function loadDetail(pairId: string) {
@@ -212,8 +234,14 @@ export default function ChatPage() {
     await fetch("/api/messages", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ pair_id: pairId }) });
   }
 
-  function handleKeyDown(e: KeyboardEvent<HTMLInputElement>) {
-    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+  function handleKeyDown(e: KeyboardEvent<HTMLTextAreaElement>) {
+    if (e.key === "Enter" && e.altKey) {
+      e.preventDefault();
+      setInput((prev) => prev + "\n");
+    } else if (e.key === "Enter" && !e.shiftKey && !e.altKey) {
+      e.preventDefault();
+      sendMessage();
+    }
   }
 
   const activePairs = pairs.filter((p) => !p.is_deleted);
@@ -324,7 +352,23 @@ export default function ChatPage() {
           {/* 스트리밍 중 */}
           {streamingPair && (
             <div className="space-y-3">
-              <div className="flex justify-end">
+              <div className="flex justify-end items-end gap-2">
+                <div className="flex flex-col gap-1 items-end">
+                  <div className="flex gap-2">
+                    <button
+                      onClick={cancelAndEdit}
+                      className="text-xs px-3 py-1 rounded-full font-medium transition-opacity hover:opacity-80"
+                      style={{ backgroundColor: "rgba(212,175,55,0.15)", border: `1px solid ${GOLD_DIM}`, color: GOLD }}>
+                      ✏️ 질문 수정
+                    </button>
+                    <button
+                      onClick={cancelAndDiscard}
+                      className="text-xs px-3 py-1 rounded-full font-medium transition-opacity hover:opacity-80"
+                      style={{ backgroundColor: "rgba(255,80,80,0.12)", border: "1px solid rgba(255,80,80,0.35)", color: "#f87171" }}>
+                      🗑️ 질문 실수
+                    </button>
+                  </div>
+                </div>
                 <div className="max-w-[70%] px-4 py-3 rounded-2xl rounded-tr-sm text-sm font-medium" style={{ backgroundColor: GOLD, color: "#0d0d1a" }}>
                   {streamingPair.user}
                 </div>
@@ -391,18 +435,33 @@ export default function ChatPage() {
       )}
 
       {/* 입력창 */}
-      <div className="px-4 py-3 flex gap-3" style={{ backgroundColor: "rgba(0,0,0,0.5)", borderTop: `1px solid ${GOLD_FAINT}` }}>
-        <input
+      <div className="px-4 py-3 flex gap-3 items-end" style={{ backgroundColor: "rgba(0,0,0,0.5)", borderTop: `1px solid ${GOLD_FAINT}` }}>
+        <textarea
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="질문을 입력하세요..."
+          placeholder={"질문을 입력하세요... (Enter 전송 / Alt+Enter 줄바꿈)"}
           disabled={isLoading}
           autoComplete="off"
           autoCorrect="off"
           spellCheck={false}
-          className="flex-1 px-4 py-3 rounded-xl text-sm outline-none"
-          style={{ backgroundColor: "rgba(255,255,255,0.07)", border: `1px solid ${GOLD_FAINT}`, color: "#e8e0d0" }}
+          rows={1}
+          className="flex-1 px-4 py-3 rounded-xl text-sm outline-none resize-none"
+          style={{
+            backgroundColor: "rgba(255,255,255,0.07)",
+            border: `1px solid ${GOLD_FAINT}`,
+            color: "#e8e0d0",
+            maxHeight: "160px",
+            overflowY: "auto",
+            lineHeight: "1.5",
+            scrollbarWidth: "thin",
+            scrollbarColor: `${GOLD_DIM} transparent`,
+          }}
+          onInput={(e) => {
+            const el = e.currentTarget;
+            el.style.height = "auto";
+            el.style.height = Math.min(el.scrollHeight, 160) + "px";
+          }}
         />
         <button
           onClick={sendMessage}
